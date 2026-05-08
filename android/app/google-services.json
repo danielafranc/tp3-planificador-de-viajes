@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "123583609890",
+    "project_id": "tp3-planificador-viajes",
+    "storage_bucket": "tp3-planificador-viajes.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123583609890:android:0b983ab09d78d9c153de7b",
+        "android_client_info": {
+          "package_name": "com.tripplanner.tripplanner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDMD6qFTIudqtVN1k2HCvCr1EmRcuXb648"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
