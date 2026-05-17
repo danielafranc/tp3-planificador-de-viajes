@@ -45,7 +45,7 @@ class DestinationNotifier extends Notifier<DestinationState> {
     state = state.copyWith(isLoading: true, clearErrorMessage: true);
 
     final collection = FirebaseFirestore.instance
-        .collection('destinations')
+        .collection('trips')
         .withConverter(
           fromFirestore: Destination.fromFirestore,
           toFirestore: (Destination destination, _) =>
