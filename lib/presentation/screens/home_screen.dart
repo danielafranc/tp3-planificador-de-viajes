@@ -322,28 +322,16 @@ class _TripPlannerBottomNavigation extends StatelessWidget {
           border: Border(top: BorderSide(color: AppColors.border, width: 1)),
         ),
         child: Row(
-          children: [
-            const _NavItem(
+          children: const [
+            _NavItem(
               icon: Icons.home_outlined,
               label: 'Inicio',
               selected: true,
             ),
-            _NavItem(
-              icon: Icons.work_outline,
-              label: 'Mi Viaje',
-              onTap: () => context.push('/my-trip'),
-            ),
-            _NavItem(
-              icon: Icons.edit_square,
-              label: 'Presup.',
-              onTap: () => context.push('/budgets'),
-            ),
-            _NavItem(
-              icon: Icons.check_circle_outline,
-              label: 'Complet.',
-              onTap: () => context.push('/completed'),
-            ),
-            const _NavItem(icon: Icons.bar_chart, label: 'Ahorro'),
+            _NavItem(icon: Icons.work_outline, label: 'Mi Viaje'),
+            _NavItem(icon: Icons.edit_square, label: 'Presup.'),
+            _NavItem(icon: Icons.check_circle_outline, label: 'Complet.'),
+            _NavItem(icon: Icons.bar_chart, label: 'Ahorro'),
           ],
         ),
       ),
@@ -355,13 +343,11 @@ class _NavItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool selected;
-  final VoidCallback? onTap;
 
   const _NavItem({
     required this.icon,
     required this.label,
     this.selected = false,
-    this.onTap,
   });
 
   @override
@@ -371,18 +357,11 @@ class _NavItem extends StatelessWidget {
     return Expanded(
       child: InkWell(
         onTap: () {
-          if (selected) {
-            return;
+          if (!selected) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('$label pendiente')));
           }
-
-          if (onTap != null) {
-            onTap!();
-            return;
-          }
-
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('$label pendiente')));
         },
         child: Column(
           mainAxisSize: MainAxisSize.min,
