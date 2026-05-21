@@ -2,7 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../presentation/screens/auth_gate_screen.dart';
 import '../../presentation/screens/home_screen.dart';
-import '../../presentation/screens/new_trip_placeholder_screen.dart';
+import '../../presentation/screens/new_trip_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -19,11 +19,10 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/new-trip',
-      name: NewTripPlaceholderScreen.name,
+      name: NewTripScreen.name,
       builder: (context, state) {
         final destinationId = state.uri.queryParameters['destinationId'];
-
-        return NewTripPlaceholderScreen(destinationId: destinationId);
+        return NewTripScreen(preselectedDestinationId: destinationId);
       },
     ),
   ],
