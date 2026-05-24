@@ -8,6 +8,7 @@ import '../../core/widgets/app_buttons.dart';
 import '../../domain/destination.dart';
 import '../providers/destination_provider.dart';
 import '../providers/new_trip_provider.dart';
+import '../providers/trip_provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  PANTALLA PRINCIPAL
@@ -60,12 +61,26 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
     super.dispose();
   }
 
-  // ── Navegar a pantalla de cálculo ─────────────────────────────────────────
+  // ── Calcular el presupuesto y guardarlo en Firestore ──────────────────────
   Future<void> _onCalcular() async {
     final result = await ref.read(newTripProvider.notifier).calculate();
-    if (result != null && mounted) {
-      context.push('/calculating', extra: result);
+    if (result == null || !mounted) return;
+
+    final newId = await ref.read(tripProvider.notifier).createBudget(result);
+    if (!mounted) return;
+
+    if (newId == null) {
+      final error = ref.read(tripProvider).errorMessage ?? 'No se pudo guardar.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error)));
+      return;
     }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Presupuesto guardado.')),
+    );
+    context.go('/budgets');
   }
 
   @override
