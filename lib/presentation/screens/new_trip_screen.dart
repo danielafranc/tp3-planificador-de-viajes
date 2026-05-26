@@ -70,17 +70,29 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
     if (!mounted) return;
 
     if (newId == null) {
-      final error = ref.read(tripProvider).errorMessage ?? 'No se pudo guardar.';
+      final error =
+          ref.read(tripProvider).errorMessage ?? 'No se pudo guardar.';
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(error)));
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Presupuesto guardado.')),
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Presupuesto guardado.')));
+
+    final currentForm = ref.read(newTripProvider);
+
+    if (!mounted) return;
+
+    context.push(
+      '/loading_budget',
+      extra: {
+        'destino': currentForm.destination?.name ?? 'Destino',
+        'personas': currentForm.people,
+      },
     );
-    context.go('/budgets');
   }
 
   @override

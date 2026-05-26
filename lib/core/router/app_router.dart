@@ -7,6 +7,9 @@ import '../../presentation/screens/completed_trips_screen.dart';
 import '../../presentation/screens/home_screen.dart';
 import '../../presentation/screens/my_trip_screen.dart';
 import '../../presentation/screens/new_trip_screen.dart';
+import '../../presentation/screens/loading_budget_screen.dart';
+import '../../presentation/screens/budget_result_screen.dart';
+import '../../domain/budget_model.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -51,6 +54,26 @@ final appRouter = GoRouter(
       path: '/completed',
       name: CompletedTripsScreen.name,
       builder: (context, state) => const CompletedTripsScreen(),
+    ),
+    GoRoute(
+      path: '/loading_budget',
+      name: LoadingBudgetScreen.name,
+      builder: (context, state) {
+        final formData = state.extra as Map<String, dynamic>?;
+        return LoadingBudgetScreen(formData: formData);
+      },
+    ),
+    GoRoute(
+      path: '/budget-result',
+      name: BudgetResultScreen.name,
+      builder: (context, state) {
+        final budget = state.extra;
+        if (budget == null || budget is! BudgetModel) {
+          // Si no hay budget, volvé al inicio
+          return const HomeScreen();
+        }
+        return BudgetResultScreen(budget: budget);
+      },
     ),
   ],
 );
