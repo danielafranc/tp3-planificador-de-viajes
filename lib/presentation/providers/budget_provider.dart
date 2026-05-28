@@ -48,6 +48,8 @@ class BudgetNotifier extends Notifier<AsyncValue<void>> {
       state = const AsyncValue.data(null);
       return true;
     } catch (e, stackTrace) {
+
+      print('Error al guardar: $e');
       state = AsyncValue.error(e, stackTrace);
       return false;
     }

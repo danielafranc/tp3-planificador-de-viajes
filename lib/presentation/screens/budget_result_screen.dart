@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../domain/budget_model.dart';
 import '../providers/budget_provider.dart';
+import '../providers/trip_provider.dart';
 
 class BudgetResultScreen extends ConsumerWidget {
   static const String name = 'presupuesto_screen';
@@ -173,7 +174,7 @@ class BudgetResultScreen extends ConsumerWidget {
 
                     _BotonPrimario(
                       label: 'Confirmar como mi viaje',
-                      onPressed: () => _showConfirmationDialog(context),
+                      onPressed: () => _showConfirmationDialog(context, ref),
                     ),
                   ],
                 ),
@@ -185,7 +186,7 @@ class BudgetResultScreen extends ConsumerWidget {
     );
   }
 
-  void _showConfirmationDialog(BuildContext context) {
+  void _showConfirmationDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -218,7 +219,13 @@ class BudgetResultScreen extends ConsumerWidget {
 
             _BotonPrimario(
               label: 'Ir a Mi viaje',
-              onPressed: () {
+              onPressed: () async {
+                if (budget.id != null) {
+                  await ref
+                      .read(tripProvider.notifier)
+                      .confirmAsActive(budget.id!);
+                }
+                if (!context.mounted) return;
                 context.pop();
                 context.go('/my-trip');
               },
