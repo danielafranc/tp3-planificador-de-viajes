@@ -131,4 +131,21 @@ class SavingsNotifier extends Notifier<SavingsState> {
       );
     }
   }
+
+Future<void> deleteMovement(String id) async {
+  final collection = _movementsCollection();
+
+  if (collection == null) {
+    state = state.copyWith(errorMessage: 'Sesión no iniciada');
+    return;
+  }
+
+  try {
+    await collection.doc(id).delete();   
+    await getAllMovements();             
+  } catch (e) {
+    state = state.copyWith(errorMessage: 'No se pudo eliminar el registro.');
+  }
+}
+
 }

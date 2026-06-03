@@ -6,6 +6,8 @@ import '../../core/widgets/app_bottom_nav.dart';
 import '../providers/savings_provider.dart';
 import '../providers/dollar_provider.dart';
 import 'package:flutter/services.dart';
+import '../../core/utils/date_format.dart';
+import '../../domain/savings_movement.dart';
 
 class SavingsScreen extends ConsumerStatefulWidget {
 static const String name = 'savings_screen';
@@ -82,6 +84,7 @@ class _SavingsContent extends StatelessWidget {
         _TotalAmountSavings(),
         SizedBox(height: 24),
         AddSavingsForm(),
+        _SavingsHistory(),
       ],
     );
   }
@@ -253,6 +256,100 @@ class _AddSavingsFormState extends ConsumerState<AddSavingsForm> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SavingsHistory extends ConsumerWidget {
+  const _SavingsHistory();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final movements = ref.watch(savingsProvider).movements;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('HISTORIAL', style: AppTextStyles.sectionTitle),
+        const SizedBox(height: 8),
+        for (final movement in movements)
+          _HistoryRow(movement: movement),
+      ],
+    );
+  }
+}
+
+class _HistoryRow extends ConsumerWidget {
+  final SavingsMovement movement;
+  const _HistoryRow({required this.movement});
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: const BoxDecoration(
+              color: Colors.green,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              formatDayMonthYear(movement.date),
+              style: const TextStyle(fontSize: 14, color: AppColors.navy),
+            ),
+          ),
+          Text(
+            '+USD ${movement.amountUsd.toStringAsFixed(2)}',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: AppColors.navy,
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: AppColors.muted),
+            onPressed: () {
+              showDialog(
+                context: context,
+                barrierDismissible: false, 
+                builder: (context) {
+                  return AlertDialog(
+                    icon: const Icon(Icons.warning_amber_outlined),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    title: const Text('¿Eliminar registro?'),
+                    content: Text(
+                      'Se eliminará el ingreso de +USD ${movement.amountUsd.toStringAsFixed(2)} '
+                      'del ${formatDayMonthYear(movement.date)}. Esta acción no se puede deshacer.',
+                    ),
+                    actions: [
+                      FilledButton(
+                        onPressed: () {
+                          ref.read(savingsProvider.notifier).deleteMovement(movement.id);
+                          Navigator.of(context).pop();
+                        },
+                        style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                        child: const Text('Eliminar'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('Cancelar'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ],
       ),
     );
   }

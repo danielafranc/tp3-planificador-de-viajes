@@ -22,3 +22,7 @@ String formatMonthKey(String yearMonthKey) {
   final month = int.parse(parts[1]);
   return '${_capitalizedMonths[month - 1]} $year';
 }
+
+String formatDayMonthYear(DateTime date) {
+  return '${date.day} ${_shortMonths[date.month - 1]} ${date.year}';
+}
