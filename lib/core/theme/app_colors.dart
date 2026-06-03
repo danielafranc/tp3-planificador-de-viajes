@@ -11,6 +11,7 @@ class AppColors {
   static const Color black = Color(0xFF1F1D22);
   static const Color muted = Color(0xFF8B858D);
   static const Color border = Color(0xFFE4DDE6);
+  static const Color burgundy = Color(0xFF7C2E56);
 
   static const Color blueCard = Color(0xFF6EA6B7);
   static const Color warmCard = Color(0xFFC1986B);
