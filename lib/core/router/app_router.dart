@@ -10,6 +10,7 @@ import '../../presentation/screens/new_trip_screen.dart';
 import '../../presentation/screens/loading_budget_screen.dart';
 import '../../presentation/screens/budget_result_screen.dart';
 import '../../domain/budget_model.dart';
+import '../../presentation/screens/savings_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -74,6 +75,11 @@ final appRouter = GoRouter(
         }
         return BudgetResultScreen(budget: budget);
       },
+    ),
+    GoRoute(
+      path: '/savings',
+      name: SavingsScreen.name,
+      builder: (context, state) => const SavingsScreen(),
     ),
   ],
 );

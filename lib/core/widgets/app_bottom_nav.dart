@@ -50,11 +50,7 @@ class AppBottomNav extends StatelessWidget {
               icon: Icons.bar_chart,
               label: 'Ahorro',
               selected: current == AppNavTab.savings,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Ahorro pendiente')),
-                );
-              },
+              onTap: () => context.go('/savings'),
             ),
           ],
         ),
