@@ -95,4 +95,40 @@ class SavingsNotifier extends Notifier<SavingsState> {
       );
     }
   }
+
+
+  Future<void> addMovement({
+    required double amount,
+    required String currency,
+    required double mepRate,
+  }) async {
+
+    final collection = _movementsCollection();
+
+    if (collection == null) {
+      state = state.copyWith(errorMessage: 'Sesión no iniciada');
+      return;
+    }
+    final amountUsd = (currency == 'USD') ? amount : amount / mepRate;
+    final movement = SavingsMovement(
+      id: '',
+      amountUsd: amountUsd,
+      originalAmount: amount,
+      originalCurrency: currency,
+      mepRateUsed: (currency == 'USD') ? null : mepRate,
+      date: DateTime.now(), 
+    );
+
+    state = state.copyWith(isLoading: true, clearErrorMessage: true);
+
+    try {
+      await collection.add(movement);
+      await getAllMovements(); 
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'No se pudo registrar el ahorro.',
+      );
+    }
+  }
 }
