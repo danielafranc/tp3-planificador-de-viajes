@@ -11,6 +11,7 @@ import '../../presentation/screens/loading_budget_screen.dart';
 import '../../presentation/screens/budget_result_screen.dart';
 import '../../domain/budget_model.dart';
 import '../../presentation/screens/savings_screen.dart';
+import '../../presentation/screens/register_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -19,6 +20,11 @@ final appRouter = GoRouter(
       path: '/',
       name: AuthGateScreen.name,
       builder: (context, state) => const AuthGateScreen(),
+    ),
+    GoRoute(
+      path: '/register',
+      name: RegisterScreen.name,
+      builder: (context, state) => const RegisterScreen(),
     ),
     GoRoute(
       path: '/home',

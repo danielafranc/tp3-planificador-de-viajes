@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_buttons.dart';
 import '../../core/widgets/app_divider_or.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../providers/auth_provider.dart';
+
 
 class LoginScreen extends ConsumerStatefulWidget {
   static const String name = 'login_screen';
@@ -31,40 +34,84 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> login() async {
-    final email = emailController.text.trim();
-    final password = passwordController.text;
+  final email = emailController.text.trim();
+  final password = passwordController.text;
 
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ingresá email y contraseña')),
-      );
+  if (email.isEmpty || password.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Ingresá email y contraseña')),
+    );
+    return;
+  }
+
+  setState(() {
+    isLoading = true;
+  });
+
+  try {
+    await ref
+        .read(authProvider.notifier)
+        .login(email: email, password: password);
+  } catch (e) {
+    if (!mounted) {
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
+    String message = 'No se pudo iniciar sesión.';
 
-    try {
-      await ref
-          .read(authProvider.notifier)
-          .login(email: email, password: password);
-    } catch (e) {
-      if (!mounted) {
-        return;
+    if (e is FirebaseAuthException) {
+      if (e.code == 'invalid-credential' ||
+          e.code == 'wrong-password' ||
+          e.code == 'user-not-found') {
+        message = 'Email o contraseña incorrectos.';
+      } else if (e.code == 'invalid-email') {
+        message = 'El email ingresado no es válido.';
+      } else if (e.code == 'user-disabled') {
+        message = 'El usuario está deshabilitado.';
+      } else if (e.code == 'too-many-requests') {
+        message = 'Demasiados intentos. Probá de nuevo más tarde.';
       }
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('No se pudo iniciar sesión: $e')));
     }
 
-    if (mounted) {
-      setState(() {
-        isLoading = false;
-      });
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
+
+  if (mounted) {
+    setState(() {
+      isLoading = false;
+    });
+  }
+}
+
+  Future<void> loginWithGoogle() async {
+  setState(() {
+    isLoading = true;
+  });
+
+  try {
+    await ref.read(authProvider.notifier).loginWithGoogle();
+
+    if (!mounted) return;
+
+    context.go('/');
+  } catch (e) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+       const SnackBar(
+        content: Text('No se pudo iniciar sesión con Google.'),
+      ),
+    );
+  }
+
+  if (mounted) {
+    setState(() {
+      isLoading = false;
+    });
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -116,14 +163,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const AppDividerOr(text: 'o'),
                     const SizedBox(height: 14),
                     AppSecondaryButton(
-                      text: 'Continuar con Google',
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Google login pendiente'),
-                          ),
-                        );
-                      },
+                      text: isLoading ? 'Ingresando...' : 'Continuar con Google',
+                      onPressed: isLoading ? null : loginWithGoogle,
                       leading: const Text(
                         'G',
                         style: TextStyle(
@@ -139,13 +180,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     AppSecondaryButton(
                       text: 'Crear cuenta nueva',
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Registro se agrega en el próximo paso',
-                            ),
-                          ),
-                        );
+                        context.push('/register');
                       },
                     ),
                   ],

@@ -12,7 +12,20 @@
           "package_name": "com.tripplanner.tripplanner"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "123583609890-uq9p9afcumiff6k3ndl1c4ctm7sjcdbp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tripplanner.tripplanner",
+            "certificate_hash": "9ea66707ae51dd6b5c5813cde661953bda365771"
+          }
+        },
+        {
+          "client_id": "123583609890-jam1jt4rcpbr3s9prmh68338adbj8tft.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDMD6qFTIudqtVN1k2HCvCr1EmRcuXb648"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "123583609890-jam1jt4rcpbr3s9prmh68338adbj8tft.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "123583609890-5p1s1t2u6cb9ouktp4d8luvvcd7u8e4l.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.tripplanner.tripplanner"
+              }
+            }
+          ]
         }
       }
     }

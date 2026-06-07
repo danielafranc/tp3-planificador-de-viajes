@@ -42,12 +42,12 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyDl0VRL95OxpiQKrk2NuNbKiGSKXqEWuL4',
-    appId: '1:123583609890:web:5a78c9554035e4d053de7b',
+    appId: '1:123583609890:web:3cf03a65cc85ff7953de7b',
     messagingSenderId: '123583609890',
     projectId: 'tp3-planificador-viajes',
     authDomain: 'tp3-planificador-viajes.firebaseapp.com',
     storageBucket: 'tp3-planificador-viajes.firebasestorage.app',
-    measurementId: 'G-3T29TF87VM',
+    measurementId: 'G-405PWKSLG9',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -64,6 +64,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '123583609890',
     projectId: 'tp3-planificador-viajes',
     storageBucket: 'tp3-planificador-viajes.firebasestorage.app',
+    androidClientId: '123583609890-uq9p9afcumiff6k3ndl1c4ctm7sjcdbp.apps.googleusercontent.com',
+    iosClientId: '123583609890-5p1s1t2u6cb9ouktp4d8luvvcd7u8e4l.apps.googleusercontent.com',
     iosBundleId: 'com.tripplanner.tripplanner',
   );
 
@@ -73,6 +75,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '123583609890',
     projectId: 'tp3-planificador-viajes',
     storageBucket: 'tp3-planificador-viajes.firebasestorage.app',
+    androidClientId: '123583609890-uq9p9afcumiff6k3ndl1c4ctm7sjcdbp.apps.googleusercontent.com',
+    iosClientId: '123583609890-5p1s1t2u6cb9ouktp4d8luvvcd7u8e4l.apps.googleusercontent.com',
     iosBundleId: 'com.tripplanner.tripplanner',
   );
 

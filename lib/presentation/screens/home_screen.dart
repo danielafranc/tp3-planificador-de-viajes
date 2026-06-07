@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_buttons.dart';
+import '../../core/widgets/app_bottom_nav.dart';
 import '../../domain/destination.dart';
 import '../providers/auth_provider.dart';
 import '../providers/destination_provider.dart';
@@ -46,8 +47,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           children: [
             _HomeHeader(
-              onLogout: () {
-                ref.read(authProvider.notifier).logout();
+              onLogout: () async {
+                  await ref.read(authProvider.notifier).logout();
+
+                  if (!context.mounted) {
+                      return;
+                  }
+
+                   context.go('/');
               },
             ),
             Expanded(
@@ -60,7 +67,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: const _TripPlannerBottomNavigation(),
+      bottomNavigationBar: const AppBottomNav(current: AppNavTab.home),
     );
   }
 }
@@ -102,7 +109,7 @@ class _HomeContent extends StatelessWidget {
 }
 
 class _HomeHeader extends StatelessWidget {
-  final VoidCallback onLogout;
+  final Future<void> Function() onLogout;
 
   const _HomeHeader({required this.onLogout});
 
@@ -303,114 +310,6 @@ class _Dot extends StatelessWidget {
       decoration: BoxDecoration(
         color: isActive ? AppColors.navy : AppColors.border,
         shape: BoxShape.circle,
-      ),
-    );
-  }
-}
-
-class _TripPlannerBottomNavigation extends StatelessWidget {
-  const _TripPlannerBottomNavigation();
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Container(
-        height: 58,
-        decoration: const BoxDecoration(
-          color: AppColors.white,
-          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
-        ),
-        child: Row(
-          children: [
-            const _NavItem(
-              icon: Icons.home_outlined,
-              label: 'Inicio',
-              selected: true,
-            ),
-            _NavItem(
-              icon: Icons.work_outline,
-              label: 'Mi Viaje',
-              onTap: () => context.go('/my-trip'),
-            ),
-            _NavItem(
-              icon: Icons.edit_square,
-              label: 'Presup.',
-              onTap: () => context.go('/budgets'),
-            ),
-            _NavItem(
-              icon: Icons.check_circle_outline,
-              label: 'Complet.',
-              onTap: () => context.go('/completed'),
-            ),
-            _NavItem(icon: Icons.bar_chart,
-             label: 'Ahorro',
-             onTap: () => context.go('/savings'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    this.selected = false,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? AppColors.navy : AppColors.mauve;
-
-    return Expanded(
-      child: InkWell(
-        onTap: () {
-          if (selected) return;
-          if (onTap != null) {
-            onTap!();
-            return;
-          }
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('$label pendiente')));
-        },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              height: 4,
-              child: selected
-                  ? Container(width: 38, color: AppColors.navy)
-                  : const SizedBox.shrink(),
-            ),
-            const SizedBox(height: 5),
-            Icon(icon, color: color, size: 19),
-            const SizedBox(height: 2),
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 9,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

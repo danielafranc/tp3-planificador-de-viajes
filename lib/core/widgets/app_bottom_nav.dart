@@ -26,7 +26,7 @@ class AppBottomNav extends StatelessWidget {
               icon: Icons.home_outlined,
               label: 'Inicio',
               selected: current == AppNavTab.home,
-              onTap: () => context.go('/home'),
+              onTap: () => context.go('/'),
             ),
             _NavItem(
               icon: Icons.work_outline,
