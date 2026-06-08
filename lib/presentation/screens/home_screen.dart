@@ -10,6 +10,7 @@ import '../../domain/destination.dart';
 import '../providers/auth_provider.dart';
 import '../providers/destination_provider.dart';
 import '../widgets/destination_card.dart';
+import '../providers/app_user_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   static const String name = 'home_screen';
@@ -33,6 +34,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final destinationState = ref.watch(destinationProvider);
+
+    final appUserState = ref.watch(appUserProvider);
 
     final destinations = destinationState.destinations;
 
@@ -62,6 +65,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 destinationState: destinationState,
                 destinations: destinations,
                 featuredDestinations: featuredDestinations,
+                isAdmin: appUserState.isAdmin,
               ),
             ),
           ],
@@ -76,11 +80,13 @@ class _HomeContent extends StatelessWidget {
   final DestinationState destinationState;
   final List<Destination> destinations;
   final List<Destination> featuredDestinations;
+  final bool isAdmin;
 
   const _HomeContent({
     required this.destinationState,
     required this.destinations,
     required this.featuredDestinations,
+    required this.isAdmin,
   });
 
   @override
@@ -104,6 +110,7 @@ class _HomeContent extends StatelessWidget {
     return _HomeView(
       destinations: destinations,
       featuredDestinations: featuredDestinations,
+       isAdmin: isAdmin,
     );
   }
 }
@@ -157,10 +164,12 @@ class _HomeHeader extends StatelessWidget {
 class _HomeView extends StatelessWidget {
   final List<Destination> destinations;
   final List<Destination> featuredDestinations;
+  final bool isAdmin;
 
   const _HomeView({
     required this.destinations,
     required this.featuredDestinations,
+    required this.isAdmin,
   });
 
   @override
@@ -181,6 +190,19 @@ class _HomeView extends StatelessWidget {
             },
           ),
         ),
+        
+      if (isAdmin) ...[
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: AppOutlineMauveButton(
+            text: '⚙ Administrar destinos',
+            onPressed: () {
+              context.push('/admin-destinations');
+          },
+        ),
+      ),
+    ],
         const SizedBox(height: 12),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 16),

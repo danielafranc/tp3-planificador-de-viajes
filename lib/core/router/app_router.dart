@@ -1,17 +1,21 @@
 import 'package:go_router/go_router.dart';
 
 import '../../presentation/screens/auth_gate_screen.dart';
+import '../../presentation/screens/home_screen.dart';
+import '../../presentation/screens/register_screen.dart';
+import '../../domain/destination.dart';
+import '../../presentation/screens/admin_destinations_screen.dart';
+import '../../presentation/screens/destination_form_screen.dart';
 import '../../presentation/screens/budget_detail_screen.dart';
 import '../../presentation/screens/budgets_screen.dart';
 import '../../presentation/screens/completed_trips_screen.dart';
-import '../../presentation/screens/home_screen.dart';
 import '../../presentation/screens/my_trip_screen.dart';
 import '../../presentation/screens/new_trip_screen.dart';
 import '../../presentation/screens/loading_budget_screen.dart';
 import '../../presentation/screens/budget_result_screen.dart';
 import '../../domain/budget_model.dart';
 import '../../presentation/screens/savings_screen.dart';
-import '../../presentation/screens/register_screen.dart';
+
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -30,6 +34,27 @@ final appRouter = GoRouter(
       path: '/home',
       name: HomeScreen.name,
       builder: (context, state) => const HomeScreen(),
+    ),
+    GoRoute(
+      path: '/admin-destinations',
+      name: AdminDestinationsScreen.name,
+      builder: (context, state) => const AdminDestinationsScreen(),
+    ),
+    GoRoute(
+      path: '/admin-destinations/new',
+      name: DestinationFormScreen.createName,
+      builder: (context, state) => const DestinationFormScreen(),
+    ),
+    GoRoute(
+      path: '/admin-destinations/edit',
+      name: DestinationFormScreen.editName,
+      builder: (context, state) {
+        final destination = state.extra;
+        if (destination == null || destination is! Destination) {
+          return const AdminDestinationsScreen();
+        }
+        return DestinationFormScreen(initialDestination: destination);
+      },
     ),
     GoRoute(
       path: '/new-trip',

@@ -5,8 +5,8 @@ import '../../domain/destination.dart';
 
 final destinationProvider =
     NotifierProvider<DestinationNotifier, DestinationState>(
-      DestinationNotifier.new,
-    );
+  DestinationNotifier.new,
+);
 
 class DestinationState {
   final bool isLoading;
@@ -36,24 +36,29 @@ class DestinationState {
 }
 
 class DestinationNotifier extends Notifier<DestinationState> {
-  @override
-  DestinationState build() {
-    return const DestinationState();
-  }
-
-  Future<void> getAllDestinations() async {
-    state = state.copyWith(isLoading: true, clearErrorMessage: true);
-
-    final collection = FirebaseFirestore.instance
+  CollectionReference<Destination> get _collection {
+    return FirebaseFirestore.instance
         .collection('destinations')
         .withConverter(
           fromFirestore: Destination.fromFirestore,
           toFirestore: (Destination destination, _) =>
               destination.toFirestore(),
         );
+  }
+
+  @override
+  DestinationState build() {
+    return const DestinationState();
+  }
+
+  Future<void> getAllDestinations() async {
+    state = state.copyWith(
+      isLoading: true,
+      clearErrorMessage: true,
+    );
 
     try {
-      final result = await collection.orderBy('name').get();
+      final result = await _collection.orderBy('name').get();
 
       final destinations = result.docs.map((doc) => doc.data()).toList();
 
@@ -68,6 +73,68 @@ class DestinationNotifier extends Notifier<DestinationState> {
         errorMessage: 'No se pudieron cargar los destinos.',
         destinations: [],
       );
+    }
+  }
+
+  Future<void> createDestination(Destination destination) async {
+    state = state.copyWith(
+      isLoading: true,
+      clearErrorMessage: true,
+    );
+
+    try {
+      final doc = _collection.doc(destination.id);
+      final snapshot = await doc.get();
+
+      if (snapshot.exists) {
+        throw Exception('Ya existe un destino con ese nombre.');
+      }
+
+      await doc.set(destination);
+
+      await getAllDestinations();
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'No se pudo crear el destino.',
+      );
+
+      rethrow;
+    }
+  }
+
+  Future<void> updateDestination(Destination destination) async {
+    state = state.copyWith(
+      isLoading: true,
+      clearErrorMessage: true,
+    );
+
+    try {
+      await _collection.doc(destination.id).set(destination);
+
+      await getAllDestinations();
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'No se pudo actualizar el destino.',
+      );
+
+      rethrow;
+    }
+  }
+
+  Future<void> deleteDestination(String destinationId) async {
+    try {
+      await _collection.doc(destinationId).delete();
+
+      await getAllDestinations();
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'No se pudo eliminar el destino.',
+      );
+
+      rethrow;
     }
   }
 }
