@@ -16,7 +16,6 @@ import '../providers/trip_provider.dart';
 class NewTripScreen extends ConsumerStatefulWidget {
   static const String name = 'new_trip_screen';
 
-  /// Si se llega desde una card de destino, viene preseleccionado.
   final String? preselectedDestinationId;
 
   const NewTripScreen({super.key, this.preselectedDestinationId});
@@ -26,25 +25,16 @@ class NewTripScreen extends ConsumerStatefulWidget {
 }
 
 class _NewTripScreenState extends ConsumerState<NewTripScreen> {
-  final _durationCtrl = TextEditingController();
-
   @override
   void initState() {
     super.initState();
-
-    // Resetear el formulario al entrar
     Future.microtask(() {
       ref.read(newTripProvider.notifier).resetForm();
       ref.read(destinationProvider.notifier).getAllDestinations();
-
-      // Preseleccionar destino si viene desde una card
       if (widget.preselectedDestinationId != null) {
         _preselectDestination(widget.preselectedDestinationId!);
       }
     });
-
-    // Sincronizar controller de duración con el estado inicial
-    _durationCtrl.text = '7';
   }
 
   void _preselectDestination(String id) {
@@ -55,13 +45,6 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _durationCtrl.dispose();
-    super.dispose();
-  }
-
-  // ── Calcular el presupuesto y guardarlo en Firestore ──────────────────────
   Future<void> _onCalcular() async {
     final result = await ref.read(newTripProvider.notifier).calculate();
     if (result == null || !mounted) return;
@@ -83,7 +66,6 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
     ).showSnackBar(const SnackBar(content: Text('Presupuesto guardado.')));
 
     final currentForm = ref.read(newTripProvider);
-
     if (!mounted) return;
 
     context.push(
@@ -105,35 +87,25 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
         bottom: false,
         child: Column(
           children: [
-            // ── Header ──
             const _NewTripHeader(),
-
-            // ── Formulario scrolleable ──
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                 children: [
-                  // Destino
+                  const _OriginField(),
+                  const SizedBox(height: 12),
                   _DestinationField(form: form),
                   const SizedBox(height: 12),
-
-                  // Duración + Fecha en fila
                   Row(
                     children: [
-                      Expanded(
-                        child: _DurationField(controller: _durationCtrl),
-                      ),
+                      const Expanded(child: _DateFromField()),
                       const SizedBox(width: 10),
-                      Expanded(child: _DateField(form: form)),
+                      const Expanded(child: _DateToField()),
                     ],
                   ),
                   const SizedBox(height: 8),
-
-                  // Checkbox "Mes más barato"
                   _CheapestMonthCheckbox(form: form),
                   const SizedBox(height: 12),
-
-                  // Personas + Hotel en fila
                   Row(
                     children: [
                       Expanded(child: _PeopleDropdown(form: form)),
@@ -142,24 +114,16 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-
-                  // Distancia al centro
                   _DistanceDropdown(form: form),
                   const SizedBox(height: 20),
-
-                  // Sección TRANSPORTE
                   if (form.destination != null) ...[
                     _TransportSection(form: form),
                     const SizedBox(height: 24),
                   ],
-
-                  // Error
                   if (form.errorMessage != null) ...[
                     _ErrorBanner(message: form.errorMessage!),
                     const SizedBox(height: 12),
                   ],
-
-                  // Botón Calcular
                   AppPrimaryButton(
                     text: form.isCalculating
                         ? 'Calculando...'
@@ -185,43 +149,79 @@ class _NewTripHeader extends StatelessWidget {
   const _NewTripHeader();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: AppColors.navy,
-      padding: const EdgeInsets.fromLTRB(8, 10, 16, 12),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios_new,
-              color: AppColors.white,
-              size: 18,
-            ),
-            onPressed: () => context.pop(),
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    color: AppColors.navy,
+    padding: const EdgeInsets.fromLTRB(8, 10, 16, 12),
+    child: Row(
+      children: [
+        IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: AppColors.white,
+            size: 18,
           ),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text('Planificar viaje', style: AppTextStyles.headerTitle),
-                SizedBox(height: 2),
-                Text(
-                  'scroll para ver todo',
-                  style: AppTextStyles.headerSubtitle,
-                ),
-              ],
-            ),
+          onPressed: () => context.pop(),
+        ),
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text('Planificar viaje', style: AppTextStyles.headerTitle),
+              SizedBox(height: 2),
+              Text('scroll para ver todo', style: AppTextStyles.headerSubtitle),
+            ],
           ),
-          const SizedBox(width: 40), // balance del back button
-        ],
+        ),
+        const SizedBox(width: 40),
+      ],
+    ),
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  CAMPO: ORIGEN
+// ─────────────────────────────────────────────────────────────────────────────
+class _OriginField extends ConsumerWidget {
+  const _OriginField();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final form = ref.watch(newTripProvider);
+    final destinations = ref.watch(destinationProvider).destinations;
+
+    return _SelectField(
+      label: 'Origen',
+      value: form.origin,
+      onTap: () => _showSheet(context, ref, destinations),
+    );
+  }
+
+  void _showSheet(
+    BuildContext context,
+    WidgetRef ref,
+    List<Destination> destinations,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => _DestinationSheet(
+        destinations: destinations,
+        onSelected: (dest) {
+          ref.read(newTripProvider.notifier).setOrigin(dest.name);
+          Navigator.pop(context);
+        },
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  CAMPO: DESTINO  (abre bottom sheet con lista)
+//  CAMPO: DESTINO
 // ─────────────────────────────────────────────────────────────────────────────
 class _DestinationField extends ConsumerWidget {
   final NewTripFormState form;
@@ -229,59 +229,16 @@ class _DestinationField extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final destState = ref.watch(destinationProvider);
+    final destinations = ref.watch(destinationProvider).destinations;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Destino', style: AppTextStyles.fieldLabel),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: () =>
-              _showDestinationSheet(context, ref, destState.destinations),
-          child: Container(
-            height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: form.destination != null
-                    ? AppColors.navy
-                    : const Color(0xFFD7BDB8),
-                width: form.destination != null ? 1.4 : 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    form.destination?.name ?? '',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: form.destination != null
-                          ? AppColors.black
-                          : const Color(0xFFB9A9A6),
-                      fontStyle: form.destination != null
-                          ? FontStyle.normal
-                          : FontStyle.italic,
-                    ),
-                  ),
-                ),
-                const Icon(
-                  Icons.keyboard_arrow_down,
-                  color: AppColors.muted,
-                  size: 20,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+    return _SelectField(
+      label: 'Destino',
+      value: form.destination?.name,
+      onTap: () => _showSheet(context, ref, destinations),
     );
   }
 
-  void _showDestinationSheet(
+  void _showSheet(
     BuildContext context,
     WidgetRef ref,
     List<Destination> destinations,
@@ -304,6 +261,71 @@ class _DestinationField extends ConsumerWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  WIDGET GENÉRICO: CAMPO SELECTOR (origen y destino comparten el mismo look)
+// ─────────────────────────────────────────────────────────────────────────────
+class _SelectField extends StatelessWidget {
+  final String label;
+  final String? value;
+  final VoidCallback onTap;
+
+  const _SelectField({
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: AppTextStyles.fieldLabel),
+      const SizedBox(height: 8),
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: value != null ? AppColors.navy : const Color(0xFFD7BDB8),
+              width: value != null ? 1.4 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  value ?? '',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: value != null
+                        ? AppColors.black
+                        : const Color(0xFFB9A9A6),
+                    fontStyle: value != null
+                        ? FontStyle.normal
+                        : FontStyle.italic,
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.keyboard_arrow_down,
+                color: AppColors.muted,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  BOTTOM SHEET: LISTA DE DESTINOS
+// ─────────────────────────────────────────────────────────────────────────────
 class _DestinationSheet extends StatefulWidget {
   final List<Destination> destinations;
   final void Function(Destination) onSelected;
@@ -332,7 +354,6 @@ class _DestinationSheetState extends State<_DestinationSheet> {
       maxChildSize: 0.9,
       builder: (_, ctrl) => Column(
         children: [
-          // Handle
           Container(
             margin: const EdgeInsets.symmetric(vertical: 10),
             width: 40,
@@ -342,7 +363,6 @@ class _DestinationSheetState extends State<_DestinationSheet> {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          // Buscador
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: TextField(
@@ -376,7 +396,6 @@ class _DestinationSheetState extends State<_DestinationSheet> {
               ),
             ),
           ),
-          // Lista
           Expanded(
             child: ListView.builder(
               controller: ctrl,
@@ -416,91 +435,80 @@ class _DestinationSheetState extends State<_DestinationSheet> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  CAMPO: DURACIÓN
+//  CAMPOS: DESDE / HASTA
 // ─────────────────────────────────────────────────────────────────────────────
-class _DurationField extends ConsumerWidget {
-  final TextEditingController controller;
-  const _DurationField({required this.controller});
+class _DateFromField extends ConsumerWidget {
+  const _DateFromField();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Duración', style: AppTextStyles.fieldLabel),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          onChanged: (v) {
-            final days = int.tryParse(v);
-            if (days != null && days > 0) {
-              ref.read(newTripProvider.notifier).setDuration(days);
-            }
-          },
-          decoration: InputDecoration(
-            hintText: '7 días',
-            hintStyle: const TextStyle(
-              color: Color(0xFFB9A9A6),
-              fontStyle: FontStyle.italic,
-            ),
-            filled: true,
-            fillColor: AppColors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 14,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFD7BDB8)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColors.navy, width: 1.4),
-            ),
-          ),
-        ),
-      ],
+    final form = ref.watch(newTripProvider);
+    return _DatePickerField(
+      label: 'Desde',
+      date: form.dateFrom,
+      disabled: form.cheapestMonth,
+      firstDate: DateTime.now(),
+      onPicked: (d) => ref.read(newTripProvider.notifier).setDateFrom(d),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  CAMPO: FECHA / MES
-// ─────────────────────────────────────────────────────────────────────────────
-class _DateField extends ConsumerWidget {
-  final NewTripFormState form;
-  const _DateField({required this.form});
+class _DateToField extends ConsumerWidget {
+  const _DateToField();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final disabled = form.cheapestMonth;
-    final label = form.tripDate != null
-        ? '${_monthName(form.tripDate!.month)} ${form.tripDate!.year}'
-        : null;
+    final form = ref.watch(newTripProvider);
+    return _DatePickerField(
+      label: 'Hasta',
+      date: form.dateTo,
+      disabled: form.cheapestMonth,
+      firstDate: form.dateFrom ?? DateTime.now(),
+      onPicked: (d) => ref.read(newTripProvider.notifier).setDateTo(d),
+    );
+  }
+}
+
+class _DatePickerField extends StatelessWidget {
+  final String label;
+  final DateTime? date;
+  final bool disabled;
+  final DateTime firstDate;
+  final void Function(DateTime) onPicked;
+
+  const _DatePickerField({
+    required this.label,
+    required this.date,
+    required this.disabled,
+    required this.firstDate,
+    required this.onPicked,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final labelText = date != null
+        ? '${date!.day}/${date!.month}/${date!.year}'
+        : disabled
+        ? '— desactivado —'
+        : '';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Fecha / mes', style: AppTextStyles.fieldLabel),
+        Text(label, style: AppTextStyles.fieldLabel),
         const SizedBox(height: 8),
         GestureDetector(
           onTap: disabled
               ? null
               : () async {
-                  final now = DateTime.now();
                   final picked = await showDatePicker(
                     context: context,
-                    initialDate:
-                        form.tripDate ?? now.add(const Duration(days: 90)),
-                    firstDate: now,
-                    lastDate: DateTime(now.year + 3),
-                    helpText: 'Elegí el mes del viaje',
+                    initialDate: date ?? firstDate,
+                    firstDate: firstDate,
+                    lastDate: DateTime(DateTime.now().year + 3),
                     locale: const Locale('es'),
                   );
-                  if (picked != null) {
-                    ref.read(newTripProvider.notifier).setTripDate(picked);
-                  }
+                  if (picked != null) onPicked(picked);
                 },
           child: Container(
             height: 48,
@@ -514,12 +522,12 @@ class _DateField extends ConsumerWidget {
               children: [
                 Expanded(
                   child: Text(
-                    label ?? (disabled ? '— desactivado —' : ''),
+                    labelText,
                     style: TextStyle(
                       fontSize: 14,
                       color: disabled
                           ? AppColors.muted
-                          : label != null
+                          : date != null
                           ? AppColors.black
                           : const Color(0xFFB9A9A6),
                       fontStyle: FontStyle.italic,
@@ -539,25 +547,6 @@ class _DateField extends ConsumerWidget {
       ],
     );
   }
-
-  String _monthName(int month) {
-    const months = [
-      '',
-      'ene',
-      'feb',
-      'mar',
-      'abr',
-      'may',
-      'jun',
-      'jul',
-      'ago',
-      'sep',
-      'oct',
-      'nov',
-      'dic',
-    ];
-    return months[month];
-  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -568,96 +557,78 @@ class _CheapestMonthCheckbox extends ConsumerWidget {
   const _CheapestMonthCheckbox({required this.form});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Row(
-      children: [
-        Checkbox(
-          value: form.cheapestMonth,
-          activeColor: AppColors.navy,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-          onChanged: (v) {
-            ref.read(newTripProvider.notifier).setCheapestMonth(v ?? false);
-          },
+  Widget build(BuildContext context, WidgetRef ref) => Row(
+    children: [
+      Checkbox(
+        value: form.cheapestMonth,
+        activeColor: AppColors.navy,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        onChanged: (v) =>
+            ref.read(newTripProvider.notifier).setCheapestMonth(v ?? false),
+      ),
+      const Text(
+        'Mes más barato',
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: AppColors.black,
         ),
-        const Text(
-          'Mes más barato',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.black,
-          ),
-        ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  DROPDOWN: PERSONAS
+//  DROPDOWNS
 // ─────────────────────────────────────────────────────────────────────────────
 class _PeopleDropdown extends ConsumerWidget {
   final NewTripFormState form;
   const _PeopleDropdown({required this.form});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return _LabeledDropdown<int>(
-      label: 'Personas',
-      value: form.people,
-      items: List.generate(10, (i) => i + 1),
-      labelBuilder: (v) => '$v',
-      onChanged: (v) {
-        if (v != null) ref.read(newTripProvider.notifier).setPeople(v);
-      },
-    );
-  }
+  Widget build(BuildContext context, WidgetRef ref) => _LabeledDropdown<int>(
+    label: 'Personas',
+    value: form.people,
+    items: List.generate(10, (i) => i + 1),
+    labelBuilder: (v) => '$v',
+    onChanged: (v) {
+      if (v != null) ref.read(newTripProvider.notifier).setPeople(v);
+    },
+  );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  DROPDOWN: HOTEL
-// ─────────────────────────────────────────────────────────────────────────────
 class _HotelDropdown extends ConsumerWidget {
   final NewTripFormState form;
   const _HotelDropdown({required this.form});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return _LabeledDropdown<int>(
-      label: 'Hotel',
-      value: form.hotelStars,
-      items: const [1, 2, 3, 4, 5],
-      labelBuilder: (v) => '$v★',
-      onChanged: (v) {
-        if (v != null) ref.read(newTripProvider.notifier).setHotelStars(v);
-      },
-    );
-  }
+  Widget build(BuildContext context, WidgetRef ref) => _LabeledDropdown<int>(
+    label: 'Hotel',
+    value: form.hotelStars,
+    items: const [1, 2, 3, 4, 5],
+    labelBuilder: (v) => '$v★',
+    onChanged: (v) {
+      if (v != null) ref.read(newTripProvider.notifier).setHotelStars(v);
+    },
+  );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  DROPDOWN: DISTANCIA AL CENTRO
-// ─────────────────────────────────────────────────────────────────────────────
 class _DistanceDropdown extends ConsumerWidget {
   final NewTripFormState form;
   const _DistanceDropdown({required this.form});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return _LabeledDropdown<int>(
-      label: 'Distancia al centro',
-      value: form.maxDistanceKm,
-      items: const [1, 2, 3, 4, 5],
-      labelBuilder: (v) => 'Hasta $v km',
-      onChanged: (v) {
-        if (v != null) ref.read(newTripProvider.notifier).setMaxDistance(v);
-      },
-    );
-  }
+  Widget build(BuildContext context, WidgetRef ref) => _LabeledDropdown<int>(
+    label: 'Distancia al centro',
+    value: form.maxDistanceKm,
+    items: const [1, 2, 3, 4, 5],
+    labelBuilder: (v) => 'Hasta $v km',
+    onChanged: (v) {
+      if (v != null) ref.read(newTripProvider.notifier).setMaxDistance(v);
+    },
+  );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  WIDGET GENÉRICO: DROPDOWN CON LABEL
-// ─────────────────────────────────────────────────────────────────────────────
 class _LabeledDropdown<T> extends StatelessWidget {
   final String label;
   final T value;
@@ -674,49 +645,47 @@ class _LabeledDropdown<T> extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppTextStyles.fieldLabel),
-        const SizedBox(height: 8),
-        Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFFD7BDB8)),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<T>(
-              value: value,
-              isExpanded: true,
-              icon: const Icon(
-                Icons.keyboard_arrow_down,
-                color: AppColors.muted,
-                size: 20,
-              ),
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.black,
-                fontWeight: FontWeight.w500,
-              ),
-              items: items
-                  .map(
-                    (item) => DropdownMenuItem<T>(
-                      value: item,
-                      child: Text(labelBuilder(item)),
-                    ),
-                  )
-                  .toList(),
-              onChanged: onChanged,
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: AppTextStyles.fieldLabel),
+      const SizedBox(height: 8),
+      Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFD7BDB8)),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<T>(
+            value: value,
+            isExpanded: true,
+            icon: const Icon(
+              Icons.keyboard_arrow_down,
+              color: AppColors.muted,
+              size: 20,
             ),
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.black,
+              fontWeight: FontWeight.w500,
+            ),
+            items: items
+                .map(
+                  (item) => DropdownMenuItem<T>(
+                    value: item,
+                    child: Text(labelBuilder(item)),
+                  ),
+                )
+                .toList(),
+            onChanged: onChanged,
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -743,7 +712,6 @@ class _TransportSection extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 8),
-
         if (form.isLoadingPrices)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
@@ -765,7 +733,6 @@ class _TransportSection extends ConsumerWidget {
             );
             final isSelected = form.selectedTransport == transport;
             final price = form.transportPrices[transport];
-
             return _TransportCard(
               name: transport,
               priceUsd: price,
@@ -778,7 +745,6 @@ class _TransportSection extends ConsumerWidget {
                         .selectTransport(transport),
             );
           }),
-
         const SizedBox(height: 6),
         const Text(
           'Por persona ida y vuelta · actualizados ahora',
@@ -810,56 +776,54 @@ class _TransportCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: isUnavailable
+            ? const Color(0xFFF9F5F3)
+            : isSelected
+            ? AppColors.navy.withValues(alpha: 0.06)
+            : AppColors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
           color: isUnavailable
-              ? const Color(0xFFF9F5F3)
+              ? const Color(0xFFE4DDE6)
               : isSelected
-              ? AppColors.navy.withValues(alpha: 0.06)
-              : AppColors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isUnavailable
-                ? const Color(0xFFE4DDE6)
-                : isSelected
-                ? AppColors.navy
-                : const Color(0xFFD7BDB8),
-            width: isSelected ? 1.8 : 1,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              name,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: isUnavailable ? AppColors.muted : AppColors.black,
-              ),
-            ),
-            Text(
-              isUnavailable
-                  ? 'No disponible'
-                  : 'Desde USD ${priceUsd!.toStringAsFixed(0)}',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: isUnavailable ? AppColors.muted : AppColors.navy,
-                fontStyle: isUnavailable ? FontStyle.italic : FontStyle.normal,
-              ),
-            ),
-          ],
+              ? AppColors.navy
+              : const Color(0xFFD7BDB8),
+          width: isSelected ? 1.8 : 1,
         ),
       ),
-    );
-  }
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            name,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: isUnavailable ? AppColors.muted : AppColors.black,
+            ),
+          ),
+          Text(
+            isUnavailable
+                ? 'No disponible'
+                : 'Desde USD ${priceUsd!.toStringAsFixed(0)}',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: isUnavailable ? AppColors.muted : AppColors.navy,
+              fontStyle: isUnavailable ? FontStyle.italic : FontStyle.normal,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -870,30 +834,28 @@ class _ErrorBanner extends ConsumerWidget {
   const _ErrorBanner({required this.message});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFEDED),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE57373)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: Color(0xFFD32F2F), size: 18),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(fontSize: 13, color: Color(0xFFD32F2F)),
-            ),
+  Widget build(BuildContext context, WidgetRef ref) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    decoration: BoxDecoration(
+      color: const Color(0xFFFFEDED),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: const Color(0xFFE57373)),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.error_outline, color: Color(0xFFD32F2F), size: 18),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            message,
+            style: const TextStyle(fontSize: 13, color: Color(0xFFD32F2F)),
           ),
-          GestureDetector(
-            onTap: () => ref.read(newTripProvider.notifier).clearError(),
-            child: const Icon(Icons.close, color: Color(0xFFD32F2F), size: 16),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+        GestureDetector(
+          onTap: () => ref.read(newTripProvider.notifier).clearError(),
+          child: const Icon(Icons.close, color: Color(0xFFD32F2F), size: 16),
+        ),
+      ],
+    ),
+  );
 }

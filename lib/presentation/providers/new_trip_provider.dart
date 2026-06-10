@@ -7,6 +7,7 @@ import '../../domain/destination.dart';
 //  MODELO: resultado del cálculo (se pasa a CalculandoScreen)
 // ─────────────────────────────────────────────────────────────────────────────
 class TripCalculationResult {
+  final String origin;
   final Destination destination;
   final int durationDays;
   final DateTime? tripDate;
@@ -22,6 +23,7 @@ class TripCalculationResult {
   final DateTime savingsTargetDate;
 
   const TripCalculationResult({
+    required this.origin,
     required this.destination,
     required this.durationDays,
     required this.tripDate,
@@ -46,30 +48,26 @@ class TripCalculationResult {
 //  ESTADO DEL FORMULARIO
 // ─────────────────────────────────────────────────────────────────────────────
 class NewTripFormState {
+  final String? origin;
   final Destination? destination;
-  final int durationDays;
-  final DateTime? tripDate;
+  final DateTime? dateFrom;
+  final DateTime? dateTo;
   final bool cheapestMonth;
   final int people;
   final int hotelStars;
   final int maxDistanceKm;
   final String? selectedTransport;
-
-  /// Precios por medio de transporte disponible, ya con margen aplicado.
-  /// Ej: {'Avión': 117.0, 'Micro': 21.0}
   final Map<String, double> transportPrices;
-
-  /// Medios sin precio (no disponibles para el destino)
   final List<String> unavailableTransports;
-
   final bool isLoadingPrices;
   final bool isCalculating;
   final String? errorMessage;
 
   const NewTripFormState({
+    this.origin,
     this.destination,
-    this.durationDays = 7,
-    this.tripDate,
+    this.dateFrom,
+    this.dateTo,
     this.cheapestMonth = false,
     this.people = 1,
     this.hotelStars = 3,
@@ -82,21 +80,24 @@ class NewTripFormState {
     this.errorMessage,
   });
 
-  /// El botón "Calcular" solo se habilita cuando todos los campos están OK.
   bool get isFormValid =>
+      origin != null &&
+      origin!.isNotEmpty &&
       destination != null &&
-      durationDays > 0 &&
-      (cheapestMonth || tripDate != null) &&
+      (cheapestMonth || (dateFrom != null && dateTo != null)) &&
       people > 0 &&
       selectedTransport != null &&
       transportPrices.containsKey(selectedTransport);
 
   NewTripFormState copyWith({
+    String? origin,
+    bool clearOrigin = false,
     Destination? destination,
     bool clearDestination = false,
-    int? durationDays,
-    DateTime? tripDate,
-    bool clearTripDate = false,
+    DateTime? dateFrom,
+    bool clearDateFrom = false,
+    DateTime? dateTo,
+    bool clearDateTo = false,
     bool? cheapestMonth,
     int? people,
     int? hotelStars,
@@ -109,36 +110,29 @@ class NewTripFormState {
     bool? isCalculating,
     String? errorMessage,
     bool clearErrorMessage = false,
-  }) {
-    return NewTripFormState(
-      destination: clearDestination ? null : destination ?? this.destination,
-      durationDays: durationDays ?? this.durationDays,
-      tripDate: clearTripDate ? null : tripDate ?? this.tripDate,
-      cheapestMonth: cheapestMonth ?? this.cheapestMonth,
-      people: people ?? this.people,
-      hotelStars: hotelStars ?? this.hotelStars,
-      maxDistanceKm: maxDistanceKm ?? this.maxDistanceKm,
-      selectedTransport: clearSelectedTransport
-          ? null
-          : selectedTransport ?? this.selectedTransport,
-      transportPrices: transportPrices ?? this.transportPrices,
-      unavailableTransports:
-          unavailableTransports ?? this.unavailableTransports,
-      isLoadingPrices: isLoadingPrices ?? this.isLoadingPrices,
-      isCalculating: isCalculating ?? this.isCalculating,
-      errorMessage: clearErrorMessage
-          ? null
-          : errorMessage ?? this.errorMessage,
-    );
-  }
+  }) => NewTripFormState(
+    origin: clearOrigin ? null : origin ?? this.origin,
+    destination: clearDestination ? null : destination ?? this.destination,
+    dateFrom: clearDateFrom ? null : dateFrom ?? this.dateFrom,
+    dateTo: clearDateTo ? null : dateTo ?? this.dateTo,
+    cheapestMonth: cheapestMonth ?? this.cheapestMonth,
+    people: people ?? this.people,
+    hotelStars: hotelStars ?? this.hotelStars,
+    maxDistanceKm: maxDistanceKm ?? this.maxDistanceKm,
+    selectedTransport: clearSelectedTransport
+        ? null
+        : selectedTransport ?? this.selectedTransport,
+    transportPrices: transportPrices ?? this.transportPrices,
+    unavailableTransports: unavailableTransports ?? this.unavailableTransports,
+    isLoadingPrices: isLoadingPrices ?? this.isLoadingPrices,
+    isCalculating: isCalculating ?? this.isCalculating,
+    errorMessage: clearErrorMessage ? null : errorMessage ?? this.errorMessage,
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  CONSTANTES INTERNAS
 // ─────────────────────────────────────────────────────────────────────────────
-
-/// Precio base por persona, por viaje simple (sin margen).
-/// La lógica multiplica × 2 (ida y vuelta) × personas al calcular.
 const _kTransportBase = {
   'Bariloche': {'Avión': 90.0, 'Micro': 16.0},
   'Ushuaia': {'Avión': 200.0},
@@ -153,13 +147,8 @@ const _kTransportBase = {
   'Puerto Madryn': {'Avión': 130.0, 'Micro': 20.0},
 };
 
-/// Todos los medios que puede mostrar la pantalla (siempre los 3 en orden).
 const _kAllTransports = ['Avión', 'Micro', 'Tren'];
-
-/// Margen de seguridad aplicado sobre los precios base.
 const _kMargen = 1.30;
-
-/// Precio base por noche/persona según estrellas.
 const _kHotelBasePerNightPerPerson = {
   1: 12.0,
   2: 22.0,
@@ -179,43 +168,36 @@ class NewTripNotifier extends Notifier<NewTripFormState> {
   @override
   NewTripFormState build() => const NewTripFormState();
 
-  // ── Setters del formulario ────────────────────────────────────────────────
+  void setOrigin(String value) =>
+      state = state.copyWith(origin: value.isEmpty ? null : value);
 
   void selectDestination(Destination dest) {
     state = state.copyWith(destination: dest, clearSelectedTransport: true);
     _loadTransportPrices(dest.name);
   }
 
-  void setDuration(int days) {
-    state = state.copyWith(durationDays: days);
-  }
+  void setDateFrom(DateTime? date) =>
+      state = state.copyWith(dateFrom: date, clearDateFrom: date == null);
 
-  void setTripDate(DateTime? date) {
-    state = state.copyWith(tripDate: date, clearTripDate: date == null);
-  }
+  void setDateTo(DateTime? date) =>
+      state = state.copyWith(dateTo: date, clearDateTo: date == null);
 
-  void setCheapestMonth(bool value) {
-    state = state.copyWith(
-      cheapestMonth: value,
-      clearTripDate: value, // si activa, borra la fecha manual
-    );
-  }
+  void setCheapestMonth(bool value) => state = state.copyWith(
+    cheapestMonth: value,
+    clearDateFrom: value,
+    clearDateTo: value,
+  );
 
   void setPeople(int n) {
-    // Al cambiar personas se recalcula el precio de transporte visible
     state = state.copyWith(people: n, clearSelectedTransport: true);
     if (state.destination != null) {
       _loadTransportPrices(state.destination!.name);
     }
   }
 
-  void setHotelStars(int stars) {
-    state = state.copyWith(hotelStars: stars);
-  }
+  void setHotelStars(int stars) => state = state.copyWith(hotelStars: stars);
 
-  void setMaxDistance(int km) {
-    state = state.copyWith(maxDistanceKm: km);
-  }
+  void setMaxDistance(int km) => state = state.copyWith(maxDistanceKm: km);
 
   void selectTransport(String name) {
     if (!state.unavailableTransports.contains(name)) {
@@ -227,8 +209,6 @@ class NewTripNotifier extends Notifier<NewTripFormState> {
 
   void resetForm() => state = const NewTripFormState();
 
-  // ── Carga los precios de transporte para un destino ───────────────────────
-
   void _loadTransportPrices(String destinationName) {
     state = state.copyWith(
       isLoadingPrices: true,
@@ -237,20 +217,17 @@ class NewTripNotifier extends Notifier<NewTripFormState> {
     );
 
     final base = _kTransportBase[destinationName];
-
     final Map<String, double> prices = {};
     final List<String> unavailable = [];
 
     for (final transport in _kAllTransports) {
       if (base != null && base.containsKey(transport)) {
-        // Precio = base × margen (el × personas × 2 se hace al calcular total)
         prices[transport] = base[transport]! * _kMargen;
       } else {
         unavailable.add(transport);
       }
     }
 
-    // Si el destino no está en la tabla, fallback: sólo micro
     if (base == null) {
       prices['Micro'] = 10.0 * _kMargen;
       unavailable.removeWhere((t) => t == 'Micro');
@@ -263,23 +240,23 @@ class NewTripNotifier extends Notifier<NewTripFormState> {
     );
   }
 
-  // ── Cálculo completo ──────────────────────────────────────────────────────
-
   Future<TripCalculationResult?> calculate() async {
     if (!state.isFormValid) return null;
 
     state = state.copyWith(isCalculating: true, clearErrorMessage: true);
 
     try {
-      // 1. Tipo de cambio MEP
       final mep = await _fetchMep();
 
-      // 2. Transporte: precio base × personas × 2 (ida y vuelta)
+      // Duración calculada a partir de las fechas (o 180 días si es mes más barato)
+      final int durationDays = state.cheapestMonth
+          ? 7
+          : state.dateTo!.difference(state.dateFrom!).inDays;
+
       final transportPricePerPerson =
           state.transportPrices[state.selectedTransport]!;
       final transportTotal = transportPricePerPerson * state.people * 2;
 
-      // 3. Hotel: base × factor distancia × personas × noches × margen
       final hotelBase = _kHotelBasePerNightPerPerson[state.hotelStars] ?? 40.0;
       final distFactor = state.maxDistanceKm <= 1
           ? 1.20
@@ -289,17 +266,16 @@ class NewTripNotifier extends Notifier<NewTripFormState> {
           ? 0.85
           : 0.70;
       final hotelTotal =
-          hotelBase * distFactor * state.people * state.durationDays * _kMargen;
+          hotelBase * distFactor * state.people * durationDays * _kMargen;
 
       final total = transportTotal + hotelTotal;
 
-      // 4. Fecha meta de ahorro
       final isTouristic = state.destination!.isTouristic;
       final monthsBefore = isTouristic ? 3 : 1;
 
       final DateTime referenceDate = state.cheapestMonth
           ? DateTime.now().add(const Duration(days: 180))
-          : state.tripDate!;
+          : state.dateFrom!;
 
       final savingsTarget = DateTime(
         referenceDate.year,
@@ -310,9 +286,10 @@ class NewTripNotifier extends Notifier<NewTripFormState> {
       state = state.copyWith(isCalculating: false);
 
       return TripCalculationResult(
+        origin: state.origin!,
         destination: state.destination!,
-        durationDays: state.durationDays,
-        tripDate: state.cheapestMonth ? null : state.tripDate,
+        durationDays: durationDays,
+        tripDate: state.cheapestMonth ? null : state.dateFrom,
         cheapestMonth: state.cheapestMonth,
         people: state.people,
         hotelStars: state.hotelStars,
@@ -333,8 +310,6 @@ class NewTripNotifier extends Notifier<NewTripFormState> {
     }
   }
 
-  // ── API MEP ───────────────────────────────────────────────────────────────
-
   Future<double> _fetchMep() async {
     try {
       final response = await http
@@ -347,8 +322,6 @@ class NewTripNotifier extends Notifier<NewTripFormState> {
         return (mepData['value_sell'] as num).toDouble();
       }
     } catch (_) {}
-
-    // Si no hay conexión:
     return 1444.0;
   }
 }
