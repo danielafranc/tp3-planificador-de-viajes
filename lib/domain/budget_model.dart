@@ -8,13 +8,14 @@ class BudgetModel {
   final double exchangeRateMEP;
   final String status;
   final DateTime? createdAt;
-  
-  // ← Agregá estos
   final double transportUsd;
   final double hotelUsd;
   final int nights;
-  final String? targetDate;      // mes del viaje ej: "abr 2026"
-  final String? savingDeadline;  // fecha meta ej: "ene 2026"
+  final String? targetDate;
+  final String? savingDeadline;
+  final String? transport;
+  final int? hotelStars;
+  final int? maxDistanceKm;
 
   BudgetModel({
     this.id,
@@ -29,6 +30,9 @@ class BudgetModel {
     required this.nights,
     this.targetDate,
     this.savingDeadline,
+    this.transport,
+    this.hotelStars,
+    this.maxDistanceKm,
   });
 
   Map<String, dynamic> toMap() {
@@ -39,12 +43,14 @@ class BudgetModel {
       'exchangeRateMEP': exchangeRateMEP,
       'status': status,
       'createdAt': createdAt ?? FieldValue.serverTimestamp(),
-      // ← y estos
       'transportUsd': transportUsd,
       'hotelUsd': hotelUsd,
       'nights': nights,
       'targetDate': targetDate,
       'savingDeadline': savingDeadline,
+      'transport': transport,
+      'hotelStars': hotelStars,
+      'maxDistanceKm': maxDistanceKm,
     };
   }
 
@@ -58,12 +64,14 @@ class BudgetModel {
       exchangeRateMEP: (data['exchangeRateMEP'] ?? 0.0).toDouble(),
       status: data['status'] ?? 'Presupuesto',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
-      // ← y estos
       transportUsd: (data['transportUsd'] ?? 0.0).toDouble(),
       hotelUsd: (data['hotelUsd'] ?? 0.0).toDouble(),
       nights: data['nights'] ?? 1,
       targetDate: data['targetDate'],
       savingDeadline: data['savingDeadline'],
+      transport: data['transport'],
+      hotelStars: data['hotelStars'],
+      maxDistanceKm: data['maxDistanceKm'],
     );
   }
 }
