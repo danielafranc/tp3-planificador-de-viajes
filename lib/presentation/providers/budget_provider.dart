@@ -3,8 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../domain/budget_model.dart';
 import '../../core/services/dollar_service.dart';
 
-/// Notifier encargado de gestionar la creación de presupuestos
-/// y la integración con la API de Dólar MEP.
 class BudgetNotifier extends Notifier<AsyncValue<void>> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final DollarService _dollarService = DollarService();
@@ -14,7 +12,6 @@ class BudgetNotifier extends Notifier<AsyncValue<void>> {
     return const AsyncValue.data(null);
   }
 
-  /// Crea un nuevo presupuesto en Firestore utilizando el valor del MEP en tiempo real.
   Future<bool> createBudgetBorrador({
     required String destino,
     required int pasajeros,

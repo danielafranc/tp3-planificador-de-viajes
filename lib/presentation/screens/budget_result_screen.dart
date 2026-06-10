@@ -24,7 +24,6 @@ class BudgetResultScreen extends ConsumerWidget {
     final double transportUsd = budget.transportUsd;
     final double hotelUsd = budget.hotelUsd;
 
-    // ← llega desde loading_budget_screen
     final double mep = budget.exchangeRateMEP;
     final double totalARS = totalUSD * mep;
 
@@ -89,8 +88,9 @@ class BudgetResultScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
 
                     _ItemRow(
-                      icon: Icons.flight_takeoff,
-                      label: 'Avión ida y vuelta (x$personas)',
+                      icon: _transportIcon(budget.transport),
+                      label:
+                          '${budget.transport ?? 'Transporte'} ida y vuelta (x$personas)',
                       price: 'USD ${transportUsd.toStringAsFixed(0)}',
                     ),
 
@@ -98,7 +98,8 @@ class BudgetResultScreen extends ConsumerWidget {
 
                     _ItemRow(
                       icon: Icons.hotel,
-                      label: 'Hotel $dias noches',
+                      label:
+                          'Hotel ${budget.hotelStars ?? 3}★ a ${budget.maxDistanceKm ?? 2}km ($dias noches)',
                       price: 'USD ${hotelUsd.toStringAsFixed(0)}',
                     ),
 
@@ -184,6 +185,17 @@ class BudgetResultScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  IconData _transportIcon(String? transport) {
+    switch (transport) {
+      case 'Micro':
+        return Icons.directions_bus;
+      case 'Tren':
+        return Icons.train;
+      default:
+        return Icons.flight_takeoff;
+    }
   }
 
   void _showConfirmationDialog(BuildContext context, WidgetRef ref) {

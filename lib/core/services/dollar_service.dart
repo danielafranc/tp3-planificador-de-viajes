@@ -9,14 +9,11 @@ class DollarService {
       );
       if (response.statusCode == 200) {
 
-        print('Response body: ${response.body}');
         final data = jsonDecode(response.body);
         final rate = (data['venta'] as num).toDouble();
-        print('MEP obtenido: $rate'); 
         return rate;
       }
     } catch (e) {
-      print('Error al obtener MEP: $e');
       return 1444.0;
     }
     return 1444.0;
