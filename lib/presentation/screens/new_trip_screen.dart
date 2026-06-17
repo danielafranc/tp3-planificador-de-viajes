@@ -61,6 +61,10 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
       return;
     }
 
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Presupuesto guardado.')));
+
     final currentForm = ref.read(newTripProvider);
     if (!mounted) return;
 
@@ -69,9 +73,6 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
       extra: {
         'destino': currentForm.destination?.name ?? 'Destino',
         'personas': currentForm.people,
-        'transporte': currentForm.selectedTransport ?? 'Vuelo',
-        'hotelEstrellas': currentForm.hotelStars,
-        'distancia': currentForm.maxDistanceKm,
       },
     );
   }
@@ -160,7 +161,13 @@ class _NewTripHeader extends StatelessWidget {
             color: AppColors.white,
             size: 18,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/home');
+            }
+          },
         ),
         const Expanded(
           child: Column(
