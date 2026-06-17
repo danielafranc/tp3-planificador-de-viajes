@@ -39,9 +39,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final destinations = destinationState.destinations;
 
-    final featuredDestinations = destinations
+    final featuredDestinations = buildFeaturedDestinations(destinations);
+
+    /*final featuredDestinations = destinations
         .where((destination) => destination.isFeatured)
-        .toList();
+        .toList();*/
 
     return Scaffold(
       backgroundColor: AppColors.pearl,
@@ -227,13 +229,13 @@ class _HomeView extends StatelessWidget {
   }
 }
 
-class _FeaturedCarousel extends StatelessWidget {
+class _FeaturedCarousel extends ConsumerWidget {
   final List<Destination> destinations;
 
   const _FeaturedCarousel({required this.destinations});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (destinations.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(horizontal: 16),
@@ -257,7 +259,14 @@ class _FeaturedCarousel extends StatelessWidget {
               destination: destination,
               showPrice: true,
               fallbackColor: _fallbackColor(index),
-              onTap: () {
+              onTap: () async {
+                await ref
+                     .read(destinationProvider.notifier)
+                     .incrementVisitCount(destination.id);
+
+                if (!context.mounted) {
+                  return;
+               }
                 context.push('/new-trip?destinationId=${destination.id}');
               },
             ),
@@ -268,13 +277,13 @@ class _FeaturedCarousel extends StatelessWidget {
   }
 }
 
-class _DestinationsGrid extends StatelessWidget {
+class _DestinationsGrid extends ConsumerWidget {
   final List<Destination> destinations;
 
   const _DestinationsGrid({required this.destinations});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GridView.builder(
       itemCount: destinations.length,
       shrinkWrap: true,
@@ -292,7 +301,14 @@ class _DestinationsGrid extends StatelessWidget {
           destination: destination,
           showPrice: false,
           fallbackColor: _fallbackColor(index),
-          onTap: () {
+          onTap: () async {
+            await ref
+                  .read(destinationProvider.notifier)
+                  .incrementVisitCount(destination.id);
+
+            if (!context.mounted) {
+               return;
+            }
             context.push('/new-trip?destinationId=${destination.id}');
           },
         );
@@ -348,4 +364,15 @@ Color _fallbackColor(int index) {
   ];
 
   return colors[index % colors.length];
+}
+
+List<Destination> buildFeaturedDestinations(List<Destination> destinations) {
+  final featuredDestinations = destinations
+      .where((destination) => destination.isFeatured)
+      .toList()
+    ..sort(
+      (a, b) => b.visitCount.compareTo(a.visitCount),
+    );
+
+  return featuredDestinations.take(5).toList();
 }

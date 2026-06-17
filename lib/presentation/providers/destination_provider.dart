@@ -137,4 +137,15 @@ class DestinationNotifier extends Notifier<DestinationState> {
       rethrow;
     }
   }
+
+  Future<void> incrementVisitCount(String destinationId) async {
+    try {
+      await _collection.doc(destinationId).update({
+        'visitCount': FieldValue.increment(1),
+      });
+    } catch (e) {
+             //No se hace nada
+     }
+  }
 }
+

@@ -9,6 +9,7 @@ class Destination {
   final double priceFromUsd;
   final bool isFeatured;
   final bool isTouristic;
+  final int visitCount;
   final List<String> availableTransports;
 
   Destination({
@@ -20,6 +21,7 @@ class Destination {
     required this.priceFromUsd,
     required this.isFeatured,
     required this.isTouristic,
+    this.visitCount = 0,
     required this.availableTransports,
   });
 
@@ -32,6 +34,7 @@ class Destination {
       'priceFromUsd': priceFromUsd,
       'isFeatured': isFeatured,
       'isTouristic': isTouristic,
+      'visitCount': visitCount,
       'availableTransports': availableTransports,
     };
   }
@@ -51,6 +54,7 @@ class Destination {
       priceFromUsd: _toDouble(data['priceFromUsd']),
       isFeatured: data['isFeatured'] ?? false,
       isTouristic: data['isTouristic'] ?? false,
+      visitCount: (data['visitCount'] as num?)?.toInt() ?? 0,
       availableTransports: _toStringList(data['availableTransports']),
     );
   }

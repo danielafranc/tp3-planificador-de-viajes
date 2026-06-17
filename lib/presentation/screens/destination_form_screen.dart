@@ -191,6 +191,7 @@ class _DestinationFormScreenState extends ConsumerState<DestinationFormScreen> {
       priceFromUsd: price,
       isFeatured: isFeatured,
       isTouristic: isTouristic,
+      visitCount: widget.initialDestination?.visitCount ?? 0,
       availableTransports: selectedTransports.toList(),
     );
 

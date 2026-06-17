@@ -253,13 +253,27 @@ class _AdminDestinationTile extends StatelessWidget {
             fontWeight: FontWeight.w800,
           ),
         ),
-        subtitle: Text(
-          '${destination.province} · USD ${destination.priceFromUsd.toStringAsFixed(0)}',
-          style: const TextStyle(
-            color: AppColors.muted,
-            fontSize: 12,
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${destination.province} · USD ${destination.priceFromUsd.toStringAsFixed(0)}',
+              style: const TextStyle(
+                color: AppColors.muted,
+                fontSize: 12,
+              ),
+            ),
+          const SizedBox(height: 2),
+          Text(
+            'Visitas: ${destination.visitCount}',
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
+        ],
+      ),
         trailing: Wrap(
           spacing: 4,
           children: [
